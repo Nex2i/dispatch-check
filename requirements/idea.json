@@ -1,24 +1,30 @@
 {
-  "status": "template",
-  "name": "Replace with the selected opportunity",
-  "buyer": "Replace with the decision-maker and daily user",
-  "trigger": "Replace with the event that starts the work",
+  "name": "Dispatch Check",
+  "buyer": "Owner-dispatcher of a small field-service business scheduling 2\u20138 crews in a spreadsheet",
+  "trigger": "A dispatch schedule CSV is ready for review before it is sent to crews",
   "inputs": [
-    "Replace with a concrete customer input"
+    "CSV with job_id,crew_id,start,end,window_start,window_end,buffer_minutes and explicit timezone offsets"
   ],
-  "accepted_output": "Replace with the operational deliverable",
-  "purchase_reason": "Replace with why and how often this is purchased",
-  "geography": "Replace with buyer geography",
+  "accepted_output": "Row-numbered crew overlaps, insufficient buffers, duplicate IDs, invalid timestamps and arrival-window exceptions; downloadable review CSV with no silent repairs",
+  "purchase_reason": "A nonrenewing 30-day pass covering repeated schedule reviews; frequency and willingness to pay remain unvalidated",
+  "status": "ready",
+  "geography": "English-speaking small field-service teams, initially US; explicit offsets supported",
   "decision_level": "paid validation experiment",
-  "channel_hypothesis": "Replace with evidence-backed organic buyer search intent and discovery path",
+  "channel_hypothesis": "Organic searches for crew schedule spreadsheet conflicts lead to a worked CSV guide and local checker; access unvalidated",
   "acceptance_criteria": [
-    "Replace with a measurable end-to-end criterion"
+    "Conflicting crew rows identify both source row numbers; touching intervals pass unless buffer requires a gap",
+    "Strict explicit-offset timestamps reject impossible dates and ambiguous local times",
+    "Duplicate IDs, invalid durations and arrival-window violations produce actionable row reports",
+    "Editing inputs/settings invalidates results; reviewed downloads neutralize spreadsheet formulas",
+    "Public review deployment cannot create accounts or payments until durable capacity exists"
   ],
   "kill_conditions": [
-    "Replace with a test outcome that stops the idea"
+    "Fewer than three paying unrelated buyers each using three cycles without bespoke mapping",
+    "Support or acquisition exceeds five hours/week",
+    "Routing, urgent dispatch support or worker composition inference required"
   ],
   "sensitive_data": false,
   "release_target": "customer-ready MVP",
   "acquisition_model": "organic SEO only; no ads",
-  "seo_intent": "Replace with the primary buyer search intent and relevant competing organic results"
+  "seo_intent": "Check field service crew schedule CSV for double bookings and arrival-window violations"
 }

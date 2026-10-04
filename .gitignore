@@ -6,3 +6,8 @@ dist/
 .DS_Store
 *.log
 *.tsbuildinfo
+
+apps/web/dist-ssr/
+.env*
+!.env.example
+!**/.env.example

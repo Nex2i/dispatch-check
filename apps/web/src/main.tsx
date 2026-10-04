@@ -1,71 +1,120 @@
-import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { analyticsConsent, captureTelemetry, setAnalyticsConsent, startTelemetry, telemetryAvailable } from './telemetry';
+import React, { useEffect, useState, useRef } from 'react';
+import { hydrateRoot, createRoot } from 'react-dom/client';
+import { analyzeSchedule, issuesToCsv, jobsToCsv, SYNTHETIC_CSV, type AnalysisResult } from './domain';
 import './style.css';
 
-void startTelemetry();
-
-function App() {
-  const [email, setEmail] = useState('');
-  const [state, setState] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
-  const [consent, setConsent] = useState<'granted' | 'denied' | 'unset'>(analyticsConsent);
-
-  function chooseAnalytics(granted: boolean) {
-    if (setAnalyticsConsent(granted)) setConsent(granted ? 'granted' : 'denied');
-  }
-
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    setState('sending');
-    try {
-      const response = await fetch('/api/waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      if (!response.ok) throw new Error((await response.json()).error || 'Please try again.');
-      setState('success');
-      setMessage('Thanks. You are on the list.');
-      setEmail('');
-      void captureTelemetry('waitlist_submit_succeeded');
-    } catch (error) {
-      setState('error');
-      setMessage(error instanceof Error ? error.message : 'Please try again.');
-      void captureTelemetry('waitlist_submit_failed');
-    }
-  }
-
-  return (
-    <main>
-      <nav><strong>Nex2i</strong><span>Idea → MVP</span></nav>
-      <section className="hero">
-        <p className="eyebrow">A focused experiment</p>
-        <h1>One painful task.<br /><em>One useful result.</em></h1>
-        <p className="lead">This is the reusable starting point. Replace this promise with the selected buyer’s job and show the accepted output before expanding the product.</p>
-        <form onSubmit={submit}>
-          <label htmlFor="email">Get launch updates</label>
-          <div className="row">
-            <input id="email" type="email" required placeholder="you@company.com" value={email} onChange={event => setEmail(event.target.value)} />
-            <button disabled={state === 'sending'}>{state === 'sending' ? 'Sending…' : 'Join waitlist'}</button>
-          </div>
-          <p className="status" role="status">{message}</p>
-        </form>
-      </section>
-      <footer>
-        <span>Built to test one commercial hypothesis at a time.</span>
-        {telemetryAvailable && (
-          <div className="analytics-choice">
-            {consent === 'unset' ? (
-              <><span>Allow anonymous usage analytics?</span><button type="button" onClick={() => chooseAnalytics(true)}>Allow</button><button type="button" onClick={() => chooseAnalytics(false)}>Decline</button></>
-            ) : (
-              <button type="button" onClick={() => chooseAnalytics(consent !== 'granted')}>{consent === 'granted' ? 'Disable analytics' : 'Enable analytics'}</button>
-            )}
-          </div>
-        )}
-      </footer>
-    </main>
-  );
+const CUSTOMER_ENABLED = import.meta.env.VITE_CUSTOMER_ENABLED === 'true';
+const CANONICAL = 'https://dispatch-check.nex2i.com';
+const paths = ['/', '/account/reset/', '/guide/', '/templates/', '/pricing/', '/privacy/', '/portfolio-preview/'];
+export function download(name: string, text: string, type = 'text/csv;charset=utf-8') {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const link = document.createElement('a'); link.href = url; link.download = name; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
-
-createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);
+function demoCSV(scenario: string, duration: number) {
+  const header = 'job_id,crew_id,start,end,window_start,window_end,buffer_minutes';
+  const end = new Date(Date.UTC(2026, 9, 5, 8, duration)).toISOString();
+  const second = scenario === 'overlap' ? '09:00:00' : '11:00:00';
+  return `${header}\nDEMO-101,DEMO-CREW-A,2026-10-05T08:00:00Z,${end},2026-10-05T07:45:00Z,2026-10-05T08:30:00Z,15\nDEMO-102,DEMO-CREW-A,2026-10-05T${second}Z,2026-10-05T12:00:00Z,2026-10-05T10:30:00Z,2026-10-05T11:30:00Z,15\nDEMO-103,DEMO-CREW-B,2026-10-05T09:00:00Z,2026-10-05T11:00:00Z,,,`;
+}
+export function App({ path = '/', customerEnabled = CUSTOMER_ENABLED }: { path?: string; customerEnabled?: boolean }) {
+  const preview = path === '/portfolio-preview/';
+  const customer = customerEnabled && !preview;
+  useEffect(() => {
+    if (!preview) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || window.parent === window) return;
+      for (const origin of ['https://nex2i.com', 'https://www.nex2i.com']) window.parent.postMessage({ type: 'nex2i:preview-close' }, origin);
+    };
+    window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey);
+  }, [preview]);
+  const title = path === '/guide/' ? 'A review that keeps your spreadsheet in charge.' : path === '/templates/' ? 'A small schema. A clear handoff.' : path === '/pricing/' ? 'Pay for a useful month. No renewal.' : path === '/privacy/' ? 'Your schedule stays with you.' : 'Catch schedule conflicts before the crews leave.';
+  return <><a className="skip" href="#content">Skip to content</a><div className="shell"><header><a className="brand" href="/" aria-label="Dispatch Check home"><span className="brand-icon" aria-hidden="true">⌁</span> Dispatch<span>Check</span></a><nav aria-label="Main navigation"><a href="/guide/" aria-current={path === '/guide/' ? 'page' : undefined}>Guide</a><a href="/templates/" aria-current={path === '/templates/' ? 'page' : undefined}>CSV template</a><a href="/pricing/" aria-current={path === '/pricing/' ? 'page' : undefined}>Pricing</a></nav></header>
+  <main id="content"><div className="release"><span className="dot"/> {customer ? 'Local customer mode · production release pending' : 'Founder review · synthetic schedules only'}<span className="release-note">Customer launch pending</span></div>
+  {(!paths.includes(path) || (path === '/account/reset/' && !customer)) ? <section className="hero"><p className="eyebrow">404 · Page not found</p><h1>This route is off the schedule.</h1><p>Head back to the checker or use the review guide.</p><a className="button" href="/">Open Dispatch Check</a></section> : <><section className="hero"><div><p className="eyebrow">For teams who dispatch from a spreadsheet</p><h1>{title}</h1><p className="lead">{path === '/' || preview ? 'Find double bookings, tight handoffs and arrival-window mismatches in one row-numbered review. Keep your sheet. Fix the exceptions.' : 'A focused tool for reviewing a fixed-format schedule CSV. Explicit rules, original examples and an honest launch status.'}</p></div>{(path === '/' || preview) && <aside className="hero-note"><span className="mini-label">THE HANDOFF</span><strong>A review packet.<br/>Your decisions.</strong><p>No route guessing. No silent repairs. Every exception points back to the source.</p><span className="pill">Runs in your browser</span></aside>}</section>
+  {(path === '/' || preview) ? <Checker customer={customer}/> : path === '/account/reset/' ? <PasswordReset/> : path === '/guide/' ? <Guide/> : path === '/templates/' ? <Templates/> : path === '/pricing/' ? <Pricing/> : <Privacy/>}
+  {(path === '/' || preview) && <section className="below"><div><p className="eyebrow">ONE BOUNDED TASK</p><h2>Review the schedule.<br/>Keep the judgment.</h2><p>Booked times are not route feasibility. The checker cannot know individual crew members, traffic, breaks or whether a job will finish early. A quiet report means the supported rules passed, not that dispatch is guaranteed.</p></div><div className="steps"><div><b>01</b><span><strong>Prepare</strong>Use explicit timestamps and stable crew IDs.</span></div><div><b>02</b><span><strong>Review</strong>Find both rows behind each conflict.</span></div><div><b>03</b><span><strong>Correct</strong>Change your source and run the review again.</span></div><a href="/guide/">Read the worked review guide →</a></div></section>}
+  {customer && <Account/>}</>}
+  </main><footer><span>Dispatch Check <small>by <a href="https://nex2i.com/">Nex2i</a></small></span><div><a href="/privacy/">Privacy & data</a><a href="/guide/">Scope & limitations</a><span>Support channel pending launch</span></div><p>Commercial experiment. Pricing, demand and support workload are unvalidated.</p></footer></div></>;
+}
+function Checker({customer}: {customer:boolean}) {
+  const [csv,setCsv] = useState(SYNTHETIC_CSV);
+  const [scenario,setScenario] = useState('overlap');
+  const [duration,setDuration] = useState(120);
+  const [capacity,setCapacity] = useState(8);
+  const [result,setResult] = useState<AnalysisResult | null>(() => analyzeSchedule(SYNTHETIC_CSV,{dailyCapacityHours:8}));
+  const [state,setState] = useState<'ready'|'loading'|'error'>('ready');
+  const [message,setMessage] = useState('');
+  const [exporting,setExporting] = useState(false);
+  const [exportConsent,setExportConsent] = useState(false);
+  const revision=useRef(0);
+  function update(next:string) {revision.current++;setCsv(next);setResult(null);setMessage('Inputs changed. Run the review again before downloading.');setState('ready');}
+  function synthetic(nextScenario:string,nextDuration:number) {setScenario(nextScenario);setDuration(nextDuration);update(demoCSV(nextScenario,nextDuration));}
+  async function run() {
+    const started=revision.current;
+    setState('loading');setMessage('Reviewing your schedule…');setResult(null);
+    await new Promise(resolve => setTimeout(resolve, 30));
+    try {
+      const next = analyzeSchedule(csv,{dailyCapacityHours:capacity});
+      if (customer && next.summary.totalRows > 25) {
+        const response = await fetch('/api/entitlement', {credentials:'same-origin'});
+        const pass = await response.json();
+        if (!response.ok || !(pass.active || pass.entitled)) throw new Error('Free review is limited to 25 rows. Sign in with an active pass for larger schedules.');
+      }
+      if(started!==revision.current)return;
+      setResult(next);setState('ready');setMessage('Review complete. Check all exceptions and unchecked fields.');
+    } catch(error) {if(started!==revision.current)return;setState('error');setMessage(error instanceof Error ? error.message : 'Review failed. Check the file and try again.');}
+  }
+  async function exportReport(kind:'issues'|'jobs') {
+    if (!result || exporting || !result.summary.complete) return;
+    const started=revision.current;setExporting(true);
+    try {
+      if (customer) {
+        if(!exportConsent)throw new Error('Confirm pseudonymous data and transient export processing before sending this CSV.');
+        const response=await fetch('/api/report',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({csv,dailyCapacityHours:capacity,consent:true})});
+        const packet=await response.json();if(!response.ok)throw new Error(packet.error||'An active pass and verified account are required to export.');
+        if(started!==revision.current)throw new Error('Inputs changed during export. Review the current schedule again.');
+        if(!packet.summary?.complete)throw new Error('Server review incomplete. Narrow the schedule and try again.');
+        download(`dispatch-${kind}.csv`,kind==='issues'?packet.issuesCsv:packet.jobsCsv);
+      }else download(`synthetic-demo-${kind}.csv`,kind==='issues'?issuesToCsv(result):jobsToCsv(result));
+      setMessage('Downloaded. Schedule rows are reviewed, not repaired or certified.');
+    }catch(error){setMessage(error instanceof Error?error.message:'Could not download the report.');}finally{setExporting(false);}
+  }
+  async function file(event:React.ChangeEvent<HTMLInputElement>) {
+    const selected=event.target.files?.[0]; if(!selected)return;
+    if(selected.size>2*1024*1024){setMessage('Choose a CSV no larger than 2 MB.');setState('error');setResult(null);return;}
+    try{update(await selected.text());}catch{setMessage('Could not read this file. Try pasting the CSV.');setState('error');}
+  }
+  return <section className="workspace" aria-label="Schedule checker"><div className="workspace-head"><div><h2>Schedule review</h2><p>{customer?'Paste a fixed-format CSV or select a file. Schedule contents stay in this browser.':'Explore a synthetic dispatch day. Customer files are disabled in this public review.'}</p></div><span className="pill">{customer?'CSV → exceptions':'Interactive sample'}</span></div>
+  <div className="work-grid"><div className="input-panel"><div className="panel-label"><span>01 / INPUT</span><button className="text-button" onClick={()=>update(SYNTHETIC_CSV)}>Reset sample</button></div>
+  {customer ? <><label htmlFor="file">Choose CSV (up to 2 MB)</label><input id="file" type="file" accept=".csv,text/csv" onChange={file}/><label htmlFor="csv">Schedule CSV</label><textarea id="csv" value={csv} onChange={event=>update(event.target.value)} spellCheck={false} rows={12}/></> : <><div className="fields"><div><label htmlFor="scenario">Synthetic handoff</label><select id="scenario" value={scenario} onChange={event=>synthetic(event.target.value,duration)}><option value="overlap">Crew double booking</option><option value="spaced">Spaced appointments</option></select></div><div><label htmlFor="duration">First job duration (minutes)</label><input id="duration" type="number" min="30" max="180" step="15" value={duration} onChange={event=>synthetic(scenario,Math.min(180,Math.max(30,Number(event.target.value))))}/></div></div><div className="sample-caption">Synthetic identifiers · October 5, 2026 · UTC</div><pre className="sample-data" tabIndex={0} aria-label="Read-only synthetic CSV">{csv}</pre></>}
+  <label htmlFor="capacity">Daily crew capacity (hours, UTC day)</label><input id="capacity" type="number" min="1" max="24" value={capacity} onChange={event=>{revision.current++;setCapacity(Number(event.target.value));setResult(null);setMessage('Capacity changed. Run the review again.');}}/>
+  <p className="hint">Capacity counts booked crew time per UTC day. Buffers and travel are excluded. Blank windows or buffers stay explicitly unchecked.</p><button className="primary" disabled={state==='loading'} onClick={run}>{state==='loading'?'Reviewing…':customer?'Review schedule →':'Review synthetic schedule →'}</button><p className={state==='error'?'status error':'status'} role="status" aria-live="polite">{message}</p></div>
+  <div className="result-panel" aria-busy={state==='loading'}><div className="panel-label"><span>02 / REVIEW</span><span>Row provenance included</span></div>{!result?<div className="empty"><span aria-hidden="true">⌁</span><h3>{state==='loading'?'Checking the schedule…':'Ready for a fresh review'}</h3><p>Run the checker to produce an exception list for the current inputs.</p></div>:<><div className="metrics"><div><strong>{result.summary.validJobs}</strong><span>Valid jobs</span></div><div><strong className="red">{result.summary.errorCount}</strong><span>Errors</span></div><div><strong className="amber">{result.summary.warningCount}</strong><span>Warnings</span></div></div>{!result.summary.complete && <div className="launch-note" role="alert"><strong>Review incomplete</strong><p>A complexity limit stopped some checks. Narrow the schedule and review again. These reports must not be used to release dispatch.</p></div>}<div className="issues">{result.issues.length===0?<div className="clean"><strong>Supported checks passed.</strong><p>Review the limitations below before releasing this schedule.</p></div>:result.issues.slice(0,100).map(issue=><article className={`issue ${issue.severity}`} key={issue.id}><div><span className="issue-tag">{issue.severity}</span><span className="row-tag">{issue.rows.length?`Rows ${issue.rows.join(' & ')}`:'File'}</span></div><h3>{issue.code.replaceAll('_',' ').toLowerCase()}</h3><p>{issue.message}</p></article>)}</div>{result.issues.length>100 && <p className="hint">Showing the first 100 of {result.issues.length} exceptions; all generated exceptions are in the CSV.</p>}{customer && <label className="consent"><input type="checkbox" checked={exportConsent} onChange={event=>setExportConsent(event.target.checked)}/> I used pseudonymous job and crew IDs and consent to sending this fixed-schema CSV to the account API for transient paid export processing. It is not retained.</label>}<div className="downloads"><button className="secondary" disabled={exporting || !result.summary.complete} onClick={()=>exportReport('issues')}>Download {customer?'':'synthetic '}exceptions</button><button className="text-button" disabled={exporting || !result.summary.complete} onClick={()=>exportReport('jobs')}>Download reviewed rows ↓</button></div><p className="hint">Reports neutralize spreadsheet formulas. Reviewed rows are not silently corrected. {result.summary.capacityAssumption}</p></>}</div></div></section>;
+}
+function Guide(){return <article className="prose"><h2>A review before publication, not a new scheduling system</h2><p>The useful moment is just before you send a dispatch day to crews. Keep the original spreadsheet as your source. Export its supported fields, review the exceptions, correct the source, then export and review again. Never overwrite the original with a report.</p><h2>Walk through a double booking</h2><p>Suppose DEMO-CREW-A has DEMO-101 from 08:00 to 10:00 UTC and DEMO-102 from 09:00 to 12:00 UTC. Both source rows should appear in the overlap exception. Moving the second appointment to 10:00 removes the booked overlap, but a 15-minute buffer after DEMO-101 still makes that handoff too tight. Moving it to 10:15 satisfies that explicit buffer. It says nothing about actual travel.</p><h2>Keep arrival commitments separate</h2><p>An arrival window is when the job starts, not the entire service duration. A job beginning at 11:00 inside a 10:30–11:30 promise can end at 13:00 without violating that start window. A blank window means this check is unavailable; it must not disappear behind a clean result.</p><h2>Choose stable crew identities</h2><p>Use one consistent ID for each crew. Two differently named crews may share a person; this checker cannot infer that composition. Likewise, names differing only by spacing can represent the same team. Fix identities before relying on a conflict report.</p><h2>Make time explicit</h2><p>Use full dates, seconds and a timezone offset: <code>2026-10-05T08:00:00-06:00</code>. An overnight job needs its end date on the following day. Ambiguous local time is rejected. Capacity is aggregated by UTC day; use it as a stated accounting assumption rather than a local payroll measure.</p><h2>Release checklist</h2><ol><li>Resolve invalid rows and duplicate job IDs.</li><li>Inspect both rows in every crew conflict.</li><li>Review missing windows and buffers with the dispatcher.</li><li>Check travel, worker composition and breaks outside this tool.</li><li>Correct the source and run a fresh review before sharing.</li></ol><p><a href="/templates/">Get the fixed schema and synthetic template →</a></p></article>}
+function Templates(){const fields=[['job_id','Required stable job ID; duplicate IDs are exceptions.'],['crew_id','Required stable crew ID; no inferred worker composition.'],['start / end','Required full ISO timestamps with seconds and Z or ±HH:MM. End must be later.'],['window_start / window_end','Headers required. Supply both timestamps or leave both blank; blank is unchecked.'],['buffer_minutes','Header required. Nonnegative minutes after this job; blank is unchecked.']];return <article className="prose"><h2>Seven columns, one declared meaning</h2><p>Use these exact headers once. CSV quoting handles commas inside cells. Keep every row aligned with the header; do not include extra footer totals. Maximum customer input is 2 MB and 2,000 jobs; free analysis is capped at 25 rows after launch.</p><div className="schema-table"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody>{fields.map(([field,meaning])=><tr key={field}><td><code>{field}</code></td><td>{meaning}</td></tr>)}</tbody></table></div><button className="primary" onClick={()=>download('dispatch-synthetic-template.csv',SYNTHETIC_CSV)}>Download synthetic CSV template ↓</button><p className="hint">Fictional jobs and crews only. No customer records.</p><h2>What the output contains</h2><p>Exceptions carry severity, rule, source rows and job identifiers. Reviewed rows preserve the source values and are not a repaired schedule. Formula-like spreadsheet cells are neutralized in downloaded files. Keep original CSVs for your own record.</p><a href="/guide/">Read the worked review →</a></article>}
+function Pricing(){return <section className="pricing"><div className="price-card"><p className="eyebrow">PROPOSED BILLING MODEL</p><h2>30-day dispatch pass</h2><div className="price">$19 <span>USD / one-time purchase</span></div><p>No automatic renewal. No per-report fees. Price and willingness to pay are still being tested.</p><ul><li>Up to 2,000 jobs per review</li><li>Unlimited corrections during the pass</li><li>Downloadable exception and reviewed-row reports</li></ul><div className="launch-note"><strong>Customer launch pending</strong><p>Purchasing is unavailable in the public review. Durable accounts, email recovery and payment verification must pass release checks first.</p></div></div><div><h2>Start with the sample</h2><p>Today's public experience accepts synthetic schedules only. After customer launch, free local checks are planned for up to 25 rows with issue previews; paid access adds larger reviews and downloads.</p><h3>A month, not an ongoing obligation</h3><p>The pass is planned to begin after verified payment and expire 30 days later. Another pass requires a deliberate purchase. A canceled or failed payment grants no access; confirmed refunds or disputes revoke paid access.</p><h3>Refund proposal</h3><p>A seven-day support-request refund window is proposed for launch. Final customer terms and support capacity remain pending. There are no live charges here.</p><a href="/">Explore the synthetic review →</a></div></section>}
+function Privacy(){return <article className="prose"><h2>Public review uses fictional schedules</h2><p>The hosted review and portfolio preview have no upload, account or payment controls. Editable examples generate fictional job and crew IDs only. They do not fetch account status or send schedule data to an API. Downloads are generated in your browser.</p><h2>Customer mode, before launch</h2><p>The implementation supports local CSV analysis when customer mode is explicitly enabled. Free schedule analysis stays in the browser. Paid export requires explicit consent to transmit a fixed-schema CSV with pseudonymous job and crew IDs to the account API for transient processing; schedule contents are not retained on the server. Account, order and access metadata require isolated durable storage; production accounts remain unavailable until this release gate is met.</p><h2>Account rights and retention</h2><p>Customer mode provides account export and password-confirmed deletion. Order metadata may need retention for financial obligations, which must be described in final customer terms before live commerce. No live customer retention policy is in effect in this review.</p><h2>No advertising analytics</h2><p>This review includes no advertising pixels, behavioral analytics, external fonts or tracking SDK. Hosting necessarily receives standard requests and connection metadata. Never send customer schedules in support emails; use fictional or redacted examples.</p><p>A verified customer support channel must be configured before launch. Updated October 4, 2026.</p></article>}
+function Account(){
+ const [username,setUsername]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[name,setName]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
+ async function action(kind:string){setBusy(true);setMessage('Working…');try{
+  if(kind==='export'){const response=await fetch('/api/account/export',{credentials:'same-origin'});if(!response.ok)throw new Error('Sign in to export your account.');download('dispatch-account.json',JSON.stringify(await response.json(),null,2),'application/json');setMessage('Account export downloaded.');return;}
+  const endpoints:Record<string,string>={signup:'sign-up/email',login:'sign-in/username',verify:'send-verification-email',reset:'request-password-reset',logout:'sign-out'};
+  const url=kind==='delete'?'/api/auth/delete-user':kind==='checkout'?'/api/checkout':`/api/auth/${endpoints[kind]}`;
+  const body=kind==='signup'?{email,password,name,username,callbackURL:CANONICAL}:kind==='login'?{username,password}:kind==='verify'?{email,callbackURL:CANONICAL}:kind==='reset'?{email,redirectTo:CANONICAL+'/account/reset/'}:kind==='delete'?{password}:{};
+  const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.message||data.error||'Request failed. Check the local API configuration.');
+  if(kind==='checkout'&&data.url){const parsed=new URL(data.url);if(parsed.protocol!=='https:'||parsed.hostname!=='checkout.stripe.com')throw new Error('Unexpected checkout destination.');window.location.assign(parsed.href);return;}
+  setMessage(kind==='reset'?'If this account exists, check your email for recovery instructions.':kind==='verify'?'Check your email for verification instructions.':kind==='signup'?'Account created. Verify your email before paid access.':kind==='delete'?'Account deletion processed.':'Request completed.');setPassword('');
+ }catch(error){setMessage(error instanceof Error?error.message:'Request failed.');}finally{setBusy(false);}}
+ return <section className="account"><h2>Local account testing</h2><p>Production launch remains pending. Use only a dedicated local test identity and configured sandbox billing.</p><div className="fields"><div><label htmlFor="account-username">Username</label><input id="account-username" value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username"/></div><div><label htmlFor="account-name">Name (signup)</label><input id="account-name" value={name} onChange={e=>setName(e.target.value)}/></div><div><label htmlFor="account-email">Email</label><input id="account-email" type="email" value={email} onChange={e=>setEmail(e.target.value)}/></div><div><label htmlFor="account-password">Password / confirm deletion</label><input id="account-password" type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password"/></div></div><div className="account-actions">{['signup','login','verify','reset','logout','export','delete','checkout'].map(kind=><button className="secondary" key={kind} disabled={busy} onClick={()=>action(kind)}>{({signup:'Sign up',login:'Log in',verify:'Send verification',reset:'Recover password',logout:'Log out',export:'Export account',delete:'Delete account',checkout:'Sandbox pass checkout'} as Record<string,string>)[kind]}</button>)}</div><p role="status">{message}</p></section>
+}
+function PasswordReset(){
+ const [password,setPassword]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
+ async function reset(event:React.FormEvent){event.preventDefault();setBusy(true);try{const token=new URLSearchParams(window.location.search).get('token');if(!token)throw new Error('This recovery link has no token. Request a fresh password recovery email.');const response=await fetch('/api/auth/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({token,newPassword:password})});const data=await response.json();if(!response.ok)throw new Error(data.message||data.error||'Recovery failed. Request a new link.');setPassword('');window.history.replaceState(null,'','/account/reset/');setMessage('Password updated. Return to the account controls to sign in.');}catch(error){setMessage(error instanceof Error?error.message:'Recovery failed.');}finally{setBusy(false);}}
+ return <section className="account"><h2>Complete password recovery</h2><form onSubmit={reset}><label htmlFor="new-password">New password (at least 12 characters)</label><input id="new-password" type="password" minLength={12} required value={password} onChange={e=>setPassword(e.target.value)} autoComplete="new-password"/><button className="primary" disabled={busy}>Update password</button></form><p role="status">{message}</p><a href="/">Return to account controls</a></section>
+}
+if (typeof document !== 'undefined') {
+ const element=document.getElementById('root')!;const app=<App path={window.location.pathname}/>;
+ if(element.hasChildNodes())hydrateRoot(element,app);else createRoot(element).render(app);
+}

@@ -1,5 +1,5 @@
 {
-  "name": "nex2i-idea-to-mvp",
+  "name": "nex2i-dispatch-check",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace @nex2i/api & npm run dev --workspace @nex2i/web & wait",
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspaces && node scripts/write-release.mjs",
     "test": "npm run validate:requirements && node --test scripts/*.test.mjs && npm run test --workspaces",
     "validate:requirements": "node scripts/validate-requirements.mjs"
   },

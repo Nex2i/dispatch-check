@@ -1,16 +1,14 @@
-import { writeFileSync } from 'node:fs';
-
-const origin = process.env.NETLIFY_PROXY_ORIGIN;
-if (process.env.NETLIFY && !origin) {
-  throw new Error('NETLIFY_PROXY_ORIGIN is required for a Netlify build');
-}
-let lines = '';
-if (origin) {
-  const parsed = new URL(origin);
-  if (parsed.protocol !== 'https:' || parsed.pathname !== '/' || parsed.search || parsed.hash) {
-    throw new Error('NETLIFY_PROXY_ORIGIN must be an HTTPS origin without a path');
-  }
-  lines += `/api/*  ${parsed.origin}/api/:splat  200!\n`;
-}
-lines += '/*  /index.html  200\n';
-writeFileSync(new URL('../dist/_redirects', import.meta.url), lines);
+import {writeFileSync} from 'node:fs';
+const customer=process.env.VITE_CUSTOMER_ENABLED==='true', origin=process.env.NETLIFY_PROXY_ORIGIN;
+const canonical='https://dispatch-check.nex2i.com';
+let redirects='';
+if(customer){if(!origin)throw new Error('Customer build requires NETLIFY_PROXY_ORIGIN');const parsed=new URL(origin);if(parsed.protocol!=='https:'||parsed.pathname!=='/'||parsed.search||parsed.hash)throw new Error('Proxy must be an HTTPS origin');redirects+=`/api/* ${parsed.origin}/api/:splat 200!\n`;}else redirects+='/api/* /release-unavailable.json 503!\n';
+for(const path of ['','guide/','templates/','pricing/','privacy/','portfolio-preview/'])redirects+=`/${path}index.html ${canonical}/${path} 301!\n`;
+redirects+='https://dispatch-check.netlify.app/* '+canonical+'/:splat 301!\n';
+redirects+='/* /404.html 404\n';
+writeFileSync(new URL('../dist/_redirects',import.meta.url),redirects);
+const policy="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; frame-src 'none'; ";
+let headers='';
+for(const path of ['/','/guide/','/templates/','/pricing/','/privacy/','/account/reset/','/404.html'])headers+=`${path}\n  Content-Security-Policy: ${policy}frame-ancestors 'none'\n  X-Frame-Options: DENY\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n\n`;
+headers+=`/account/reset/\n  X-Robots-Tag: noindex, nofollow\n  Cache-Control: no-store\n\n/portfolio-preview/\n  Content-Security-Policy: ${policy}frame-ancestors 'self' https://nex2i.com https://www.nex2i.com\n  X-Robots-Tag: noindex, nofollow\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n\n/release-unavailable.json\n  Cache-Control: no-store\n  X-Robots-Tag: noindex, nofollow\n  Content-Type: application/json; charset=utf-8\n\n/api/*\n  Cache-Control: no-store\n  X-Robots-Tag: noindex, nofollow\n\n/sitemap.xml\n  Content-Type: application/xml; charset=utf-8\n\n/robots.txt\n  Content-Type: text/plain; charset=utf-8\n`;
+writeFileSync(new URL('../dist/_headers',import.meta.url),headers);

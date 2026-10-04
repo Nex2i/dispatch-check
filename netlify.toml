@@ -1,3 +1,7 @@
 [build]
-  command = "npm ci && npm run build --workspace @nex2i/web"
+  command = "npm ci --include=dev && npm run build --workspace @nex2i/web"
   publish = "apps/web/dist"
+[build.environment]
+  VITE_CUSTOMER_ENABLED = "false"
+# No independent Git deployment: exact commit CI is checked before manual publication.
+# NETLIFY_PROXY_ORIGIN is required only after durable customer release is configured.

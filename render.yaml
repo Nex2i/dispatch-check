@@ -1,20 +1,19 @@
+# NOT provisioned: customer release requires approved isolated durable storage.
+# Current founder budget prohibits new paid infrastructure. Never apply a free expiring DB as launch storage.
 services:
   - type: web
-    name: nex2i-mvp-api
+    name: dispatch-check-api
     runtime: node
     plan: free
+    autoDeploy: false
     buildCommand: npm ci --include=dev && npm run build --workspace @nex2i/api
     startCommand: npm run start --workspace @nex2i/api
     healthCheckPath: /health
     envVars:
-      - key: NODE_ENV
-        value: production
+      - key: CUSTOMER_RELEASE_ENABLED
+        value: "false"
+      - key: APP_ORIGIN
+        value: https://dispatch-check.nex2i.com
       - key: CORS_ORIGIN
-        sync: false
-      - key: DATABASE_URL
-        fromDatabase:
-          name: nex2i-mvp-db
-          property: connectionString
-databases:
-  - name: nex2i-mvp-db
-    plan: free
+        value: https://dispatch-check.nex2i.com
+# Durable database, dedicated email/auth/sandbox secrets intentionally absent until capacity exists.
