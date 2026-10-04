@@ -1,0 +1,24 @@
+{
+  "status": "template",
+  "name": "Replace with the selected opportunity",
+  "buyer": "Replace with the decision-maker and daily user",
+  "trigger": "Replace with the event that starts the work",
+  "inputs": [
+    "Replace with a concrete customer input"
+  ],
+  "accepted_output": "Replace with the operational deliverable",
+  "purchase_reason": "Replace with why and how often this is purchased",
+  "geography": "Replace with buyer geography",
+  "decision_level": "paid validation experiment",
+  "channel_hypothesis": "Replace with evidence-backed organic buyer search intent and discovery path",
+  "acceptance_criteria": [
+    "Replace with a measurable end-to-end criterion"
+  ],
+  "kill_conditions": [
+    "Replace with a test outcome that stops the idea"
+  ],
+  "sensitive_data": false,
+  "release_target": "customer-ready MVP",
+  "acquisition_model": "organic SEO only; no ads",
+  "seo_intent": "Replace with the primary buyer search intent and relevant competing organic results"
+}

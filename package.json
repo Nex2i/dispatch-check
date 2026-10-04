@@ -1,0 +1,17 @@
+{
+  "name": "nex2i-idea-to-mvp",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @nex2i/api & npm run dev --workspace @nex2i/web & wait",
+    "build": "npm run build --workspaces",
+    "test": "npm run validate:requirements && node --test scripts/*.test.mjs && npm run test --workspaces",
+    "validate:requirements": "node scripts/validate-requirements.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

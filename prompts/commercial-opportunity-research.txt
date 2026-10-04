@@ -1,0 +1,148 @@
+You are my main research orchestrator. Identify a commercially plausible small business that fits my background and constraints. Generate a broad set of ideas, research existing alternatives, and recommend the best next investment of my time. You may conclude that no candidate currently deserves a product build.
+Use subagents for independent research and skeptical review when available. You are responsible for the final reasoning, source verification, consistency, and completeness. Do not merely combine their conclusions or select the most enthusiastic agent's favorite.
+Inputs
+- Research date: use today's actual date.
+- Idea count: 100 distinct ideas.
+- Founder background: senior backend software engineer; C#/.NET, TypeScript, React, AWS, PostgreSQL, DynamoDB, asynchronous jobs, API integrations, and workflow orchestration. Prior experience at JobNimbus; current experience in Filevine legal technology. Salesforce integrations and AI-assisted revenue workflows through dripIQ.
+- Interests: independent building, fast iteration, narrow bootstrapped markets, and potentially a portfolio of small businesses later.
+- Steady-state time allowance: five hours weekly, including support, maintenance, selling, onboarding, and human review.
+- Initial discovery/build allowance: unspecified; separate this from steady-state operations rather than assuming both have the same limit.
+- Capital budget: unspecified; favor inexpensive experiments and make spending assumptions explicit.
+- Revenue objective: unspecified; compare a modest profitable project with higher-revenue scenarios instead of inventing my target.
+- Customer access: unproven unless I provide actual contacts or channels. A friend who could help sell is a possibility, not validated distribution.
+- Business type: favor a repeatable product or bounded productized service; B2B or consumer are both allowed. AI need not be essential if conventional software provides the better solution.
+- Existing projects to consider: only those I explicitly identify or authorize you to inspect. Do not assume an existing project has customers, reusable code, or commercial demand.
+- Exclusions: no business should depend on employer code, private customer lists, or confidential information. Flag actual conflicts when evidenced; do not invent legal restrictions.
+- Geographic scope: specify buyer geography where it changes the market or workflow; otherwise state the assumption.
+- Prior recommendations: treat them as hypotheses to reassess, not favored candidates.
+- Research budget: use available tools efficiently. If I set a time, cost, or call limit, honor it and identify the research depth achieved.
+Replace any of these inputs with information I supply in this run. Do not silently carry forward stale revenue, customer, budget, or availability claims from past conversations.
+1. Establish the decision rules before researching
+State the assumptions and freeze the evaluation criteria before seeing favorite candidates. Distinguish a decision to build a product from a decision to run a paid experiment.
+Use the following default weights for coarse comparison:
+Criterion	Weight
+Evidence of painful, economically meaningful work	20%
+Credible distribution and actual buyer access	20%
+Operating fit within my time allowance	20%
+Buyer-valued differentiation from alternatives	15%
+Founder implementation/domain fit	15%
+Repeat purchase potential and reliability of delivery	10%
+
+
+Explain any adjustment before scoring. If later evidence requires changing criteria, preserve the earlier version, explain why, and rerank all finalists. Do not adjust weights to make a favorite win.
+Scores are ordinal judgments, not success probabilities. Report confidence separately. Mark unknowns explicitly; an unknown channel is not a good channel, and a low-risk-looking workflow is not measured low support burden. Do not reward technical fit enough to compensate for absent customers or unmanageable operations.
+2. Delegate with independent scopes
+Allocate agents across materially different opportunity families derived from my background and observable buyer problems. Avoid putting every agent into the same kind of integration or document-extraction business.
+Reserve one agent for independent skeptical review. If resources permit, use an opportunity-discovery agent to challenge the domain allocation and find plausible ideas outside the obvious industries. Agents should not create their own subagents unless you explicitly allocate resources for it.
+Give research agents only the founder inputs, their scope, the shared criteria, and the task contract below. When the platform supports it, start independent research with minimal inherited context. Do not give them the previous winner or your preferred conclusion.
+Assign nonoverlapping ID ranges and separate output paths. Only the orchestrator edits the merged catalog or final report. Parallelize independent research; keep decisions and shared-file mutations sequential.
+Require substantive progress updates: new evidence, rejected assumptions, unresolved gates, and changed rankings. Do not simulate elapsed work, pad the run to appear thorough, or confuse long duration with research quality.
+3. Generate and deduplicate ideas
+Produce exactly the requested number of distinct buyer/task ideas. Each must specify a buyer, trigger, input, accepted output, and recurring or project-based purchasing reason.
+Do not count changing an industry label on the same workflow as a new idea unless the requirements, acquisition channel, output, or economics materially change. Merge duplicates before declaring the count complete. Replace duplicate rows with genuinely different opportunities.
+Keep room for businesses outside my current employer's industry. Distinguish strong transferable engineering skills from domain expertise I have not demonstrated.
+4. Screen the whole catalog, then deepen selectively
+For every idea, identify credible existing alternatives: direct products, native platform features, specialist service providers, DIY automation, and the current manual process. Do not force two software competitors when the real alternative is a spreadsheet or employee.
+Find at least two relevant alternatives when evidence allows. Use explicit source links for researched offerings. Label a hypothesized manual/DIY substitute as an inference. If no direct competitor is located, describe the search scope and retain uncertainty; never call the market empty.
+Record actual overlap, not just competitor names. Inspect the relevant pages before claiming features. Check current pricing, availability, plan limits, and API access for finalists. Distinguish announced, beta, trial, and generally available features. Treat conflicting documentation as unresolved rather than selecting the convenient interpretation.
+First triage all ideas. Investigate approximately 15–20 promising candidates more deeply, then 3–5 finalists. Adjust these counts to the available research budget. Clearly disclose which rows received broad screening and which received deep investigation. Do not describe 100 brainstorm rows as 100 fully validated markets.
+Seek buyer-side evidence as well as vendor pages: real requirements, firsthand workflow accounts, procurement requests, hiring responsibilities, and dated complaints. Forums can provide leads, but promotional posts, anonymous anecdotes, and duplicated claims are weak evidence.
+Separate these claims:
+- The task exists.
+- The task occurs often and costs enough to matter.
+- Existing alternatives fail for this buyer.
+- This proposed solution is meaningfully better.
+- Buyers will pay and return.
+- I can reach and serve them profitably.
+Evidence for one does not automatically support the others. Vendor existence proves supply, not an opening for me. Never invent interviews, payments, market size, conversion rates, accuracy, or customer access.
+5. Challenge finalists before selecting
+Freeze a shortlist before adversarial research. Give the skeptic the same candidate briefs and sources without your ranking or preferred winner.
+Require the skeptic to find direct feature overlap, inexpensive/native substitutes, platform expansion, weak repeat frequency, acquisition difficulties, access restrictions, founder knowledge gaps, and hidden human work.
+Do not reject an idea solely because competitors exist. Test whether it could win through a concrete buyer-valued advantage: channel, setup effort, accepted deliverable, pricing structure, reliability, or a narrower operational requirement. Any advantage remains a hypothesis until supported.
+Independently verify each finalist's decision-critical source claims. Subagent source summaries are leads, not sufficient verification. Assess source quality and date; do not use thin AI-generated vendor pages, unsupported ROI claims, or several copies of one claim as independent confirmation.
+If a separate ranking agent is available, have it rank the finalists under the frozen criteria before seeing your ranking. Investigate disagreements; majority votes and average scores do not establish truth.
+6. Test product loops and business economics
+For each finalist, distinguish:
+1. Customer value loop: trigger → input → processing → customer review/action → useful result → next purchase.
+2. Product improvement loop: consented feedback → fixture/rule improvement → lower error or review cost on the next cycle.
+3. Acquisition loop: how the next suitable buyer learns about and purchases it. Do not invent referrals or network effects.
+State where AI is useful and where explicit rules or conventional software are better. A feedback loop is not automatically a moat.
+Calculate plausible revenue and workload scenarios with labeled assumptions:
+- Revenue = paying accounts × realized price, or paid projects × project price.
+- Weekly work = fixed maintenance/admin + support + onboarding + selling + review + exception handling.
+- Include AI, infrastructure, payment fees, and paid labor in margin estimates; identify unpaid founder labor separately.
+Test a bad case as well as a favorable case. Distinguish one-time setup revenue from recurring revenue. Do not declare a five-hour business while omitting customer acquisition or assuming every exception disappears after automation.
+7. Make a comparative decision
+Choose one of: build, run a paid validation experiment, investigate a specific unresolved gate, or reject the current set. Do not force a winner to satisfy the prompt.
+If recommending an experiment, identify a concrete buyer, bounded offer, price hypothesis, required sample inputs, measurable acceptance criteria, and kill conditions. Explain why this is the best next experiment rather than implying it is already the best business.
+State which new evidence would reverse your choice. Check whether reasonable changes to the weights or my time/channel assumptions change the winner. Treat close rankings as ties unless substantive evidence separates them.
+8. Final deliverables
+Return:
+- A concise recommendation with the decision level and confidence.
+- The complete requested idea catalog, with buyer/task, alternatives, evidence, proposed opening, risks, scores, confidence, and disposition.
+- A comparison of the 3–5 finalists and specific reasons the alternatives lost.
+- Competitor research and dated source links supporting decision-critical claims.
+- Product, improvement, and acquisition loops for the recommended candidate.
+- Revenue/workload scenarios and a bounded next-step plan.
+- A list of important missing evidence and conditions that would change the recommendation.
+- A methods note explaining delegation, verification, deduplication, research depth, and limitations.
+Save a reusable report when file tools are available. Keep facts, inferences, and proposed test prices visibly distinct. Do not imply you inspected my repositories unless you actually did. Do not contact people, publish, or modify repositories as part of this research unless separately authorized.
+Proceed autonomously with the information available. Ask only for missing information that would materially change the research; meanwhile continue independent work. If browsing or subagents are unavailable, disclose that and adapt the scope honestly.
+Subagent contracts — orchestrator inserts these into assignments
+Research agent
+You own [DOMAIN/SCOPE], IDs [RANGE], with [COUNT] distinct ideas. Use the supplied founder inputs and shared rubric. Do not favor previous recommendations or extrapolate private customer access.
+Generate precise buyer/task hypotheses, research existing alternatives, and investigate your strongest candidates. Seek reasons to reject your own initial favorites. No result is required to be attractive.
+For every idea, return this structure:
+{
+  "id": 1,
+  "name": "Specific buyer/task idea",
+  "buyer": "Decision-maker and user",
+  "trigger": "When the work happens",
+  "inputs": ["Required customer inputs"],
+  "output": "Accepted operational deliverable",
+  "purchase_frequency": "Observed, inferred, or unknown",
+  "alternatives": [
+    {
+      "name": "Named offering or labeled manual substitute",
+      "type": "direct | native | service | DIY | manual",
+      "url": "Actual retrieved URL, or null if hypothetical",
+      "overlap": "Specific supported overlap",
+      "availability": "Current status or unknown"
+    }
+  ],
+  "claims": [
+    {
+      "claim": "One decision-relevant factual assertion",
+      "source_url": "Actual retrieved URL",
+      "retrieved_at": "Actual research date",
+      "evidence_type": "buyer | official documentation | vendor claim | anecdote",
+      "limitations": "What this does not establish"
+    }
+  ],
+  "opening_hypothesis": "Specific proposed advantage; label inference",
+  "channel_hypothesis": "How this buyer could be reached",
+  "ai_role": "Necessary, useful, optional, or unnecessary; explain",
+  "operating_risks": ["Failure modes and human work"],
+  "scores": {
+    "pain_evidence": "1–5 or unknown",
+    "distribution": "1–5 or unknown",
+    "operating_fit": "1–5 or unknown",
+    "differentiation": "1–5 or unknown",
+    "founder_fit": "1–5 or unknown",
+    "repeatability": "1–5 or unknown"
+  },
+  "confidence": "Low/medium/high with reason",
+  "disposition": "reject | hold | investigate | paid pilot | build",
+  "kill_conditions": ["Evidence that would eliminate it"]
+}
+Write only to [ASSIGNED OUTPUT PATH]. Return a short summary naming your strongest candidates, most important disconfirmations, and source/access uncertainties. Keep source summaries within applicable quotation and attribution limits. Never fabricate a URL, feature, price, sample, or interview.
+Independent skeptic
+Evaluate these candidate briefs under the supplied criteria. Their order is arbitrary. You are not required to endorse any candidate and should not infer the orchestrator's preference.
+For each candidate, identify the strongest existing substitute, the cheapest adequate alternative, the missing evidence, the likely customer-specific labor, and the circumstances where buyers would reasonably decline it. Research the proposed differentiator directly. Distinguish absence of proof from proof of absence.
+Return: supported weaknesses; unsupported assumptions; corrected competitor claims; likely workload failure; a fair strongest-case argument; one cheap decisive experiment; and conditions for rejection. Recommend a candidate only if the comparative case survives these checks. Do not reject all competitors automatically or demand certainty unavailable at this stage.
+Independent ranker, if resources allow
+Rank these finalist briefs under the frozen rubric without access to another agent's ranking. Separate known facts from assumptions, identify ties, and say whether the decision is build or experiment. Explain which evidence dominates your ranking and what would reverse it. Do not infer demand from the amount of detail in a brief.
+How the main orchestrator should manage the run
+Maintain one master idea registry and one claim/source ledger. Collect agent outputs, resolve duplicates, check schemas, and normalize evidence standards before comparing scores. Send targeted follow-up tasks when a claim lacks support; do not ask agents to defend their favorite at all costs.
+Use parallel slots for independent work. Once initial research ends, reuse available agents for focused disconfirmation or ranking. Do not let agents overwrite each other's files, independently change the rubric, or present conflicting facts as equally verified.
+Finish when the agreed research depth is complete and remaining uncertainty requires customer evidence, not more desk research. More agents, URLs, and elapsed time do not justify stronger confidence by themselves.
