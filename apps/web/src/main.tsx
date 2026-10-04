@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { hydrateRoot, createRoot } from 'react-dom/client';
 import { analyzeSchedule, issuesToCsv, jobsToCsv, SYNTHETIC_CSV, type AnalysisResult } from './domain';
 import './style.css';
+import { demoCSV } from './synthetic';
 
 const CUSTOMER_ENABLED = import.meta.env.VITE_CUSTOMER_ENABLED === 'true';
 const CANONICAL = 'https://dispatch-check.nex2i.com';
@@ -10,12 +11,6 @@ export function download(name: string, text: string, type = 'text/csv;charset=ut
   const url = URL.createObjectURL(new Blob([text], { type }));
   const link = document.createElement('a'); link.href = url; link.download = name; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
-}
-function demoCSV(scenario: string, duration: number) {
-  const header = 'job_id,crew_id,start,end,window_start,window_end,buffer_minutes';
-  const end = new Date(Date.UTC(2026, 9, 5, 8, duration)).toISOString();
-  const second = scenario === 'overlap' ? '09:00:00' : '11:00:00';
-  return `${header}\nDEMO-101,DEMO-CREW-A,2026-10-05T08:00:00Z,${end},2026-10-05T07:45:00Z,2026-10-05T08:30:00Z,15\nDEMO-102,DEMO-CREW-A,2026-10-05T${second}Z,2026-10-05T12:00:00Z,2026-10-05T10:30:00Z,2026-10-05T11:30:00Z,15\nDEMO-103,DEMO-CREW-B,2026-10-05T09:00:00Z,2026-10-05T11:00:00Z,,,`;
 }
 export function App({ path = '/', customerEnabled = CUSTOMER_ENABLED }: { path?: string; customerEnabled?: boolean }) {
   const preview = path === '/portfolio-preview/';
@@ -86,7 +81,7 @@ function Checker({customer}: {customer:boolean}) {
     try{update(await selected.text());}catch{setMessage('Could not read this file. Try pasting the CSV.');setState('error');}
   }
   return <section className="workspace" aria-label="Schedule checker"><div className="workspace-head"><div><h2>Schedule review</h2><p>{customer?'Paste a fixed-format CSV or select a file. Schedule contents stay in this browser.':'Explore a synthetic dispatch day. Customer files are disabled in this public review.'}</p></div><span className="pill">{customer?'CSV → exceptions':'Interactive sample'}</span></div>
-  <div className="work-grid"><div className="input-panel"><div className="panel-label"><span>01 / INPUT</span><button className="text-button" onClick={()=>update(SYNTHETIC_CSV)}>Reset sample</button></div>
+  <div className="work-grid"><div className="input-panel"><div className="panel-label"><span>01 / INPUT</span><button className="text-button" onClick={()=>{setScenario('overlap');setDuration(120);update(SYNTHETIC_CSV);}}>Reset sample</button></div>
   {customer ? <><label htmlFor="file">Choose CSV (up to 2 MB)</label><input id="file" type="file" accept=".csv,text/csv" onChange={file}/><label htmlFor="csv">Schedule CSV</label><textarea id="csv" value={csv} onChange={event=>update(event.target.value)} spellCheck={false} rows={12}/></> : <><div className="fields"><div><label htmlFor="scenario">Synthetic handoff</label><select id="scenario" value={scenario} onChange={event=>synthetic(event.target.value,duration)}><option value="overlap">Crew double booking</option><option value="spaced">Spaced appointments</option></select></div><div><label htmlFor="duration">First job duration (minutes)</label><input id="duration" type="number" min="30" max="180" step="15" value={duration} onChange={event=>synthetic(scenario,Math.min(180,Math.max(30,Number(event.target.value))))}/></div></div><div className="sample-caption">Synthetic identifiers · October 5, 2026 · UTC</div><pre className="sample-data" tabIndex={0} aria-label="Read-only synthetic CSV">{csv}</pre></>}
   <label htmlFor="capacity">Daily crew capacity (hours, UTC day)</label><input id="capacity" type="number" min="1" max="24" value={capacity} onChange={event=>{revision.current++;setCapacity(Number(event.target.value));setResult(null);setMessage('Capacity changed. Run the review again.');}}/>
   <p className="hint">Capacity counts booked crew time per UTC day. Buffers and travel are excluded. Blank windows or buffers stay explicitly unchecked.</p><button className="primary" disabled={state==='loading'} onClick={run}>{state==='loading'?'Reviewing…':customer?'Review schedule →':'Review synthetic schedule →'}</button><p className={state==='error'?'status error':'status'} role="status" aria-live="polite">{message}</p></div>
